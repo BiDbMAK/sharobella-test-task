@@ -31,6 +31,7 @@
 
     .swiper-wrapper {
         align-items: stretch;
+        padding-bottom: 48px;
     }
 
     .swiper-slide {
@@ -392,7 +393,6 @@
 
     .featured-collection__cta {
         text-align: center;
-        margin-top: 50px;
 
         border-bottom: 1px solid var(--Gold-500, #C6B081);
 
@@ -516,6 +516,7 @@
 
         /* Scrollbar track (the line) */
         .swiper-scrollbar {
+            display: flex !important;
             background-color: var(--Stroke, #E8E3DB);
             height: 4px; /* Adjust thickness */
             border-radius: 4px;
@@ -531,6 +532,11 @@
             background-color: var(--Gold-500, #C6B081);
             border-radius: 4px;
             display: flex !important;
+        }
+
+        .featured-collection__cta {
+            margin-top: 32px;
+            padding-bottom: 48px;
         }
 
         .product-card {
