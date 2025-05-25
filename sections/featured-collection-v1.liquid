@@ -762,51 +762,44 @@
 </div>
 
 <script>
-    document.querySelectorAll('.product-card').forEach(card => {
-        const cartBtn = card.querySelector('.product-card__buttons'); // The Add to Cart button
-        const qtyBlock = card.querySelector('.product-card__quantity'); // The quantity block
-        const qtyNumEl = card.querySelector('.qty-num'); // The element showing the quantity number
-        const decreaseBtn = card.querySelector('[data-action="decrease"]'); // The minus button
-        const increaseBtn = card.querySelector('[data-action="increase"]'); // The plus button
-        const addToCarLoader = card.querySelector('.loading'); // The loader
 
+    document.querySelectorAll('.product-card').forEach(card => {
+        const cartBtn = card.querySelector('.product-card__buttons');
+        const qtyBlock = card.querySelector('.product-card__quantity');
+        const qtyNumEl = card.querySelector('.qty-num');
+        const decreaseBtn = card.querySelector('[data-action="decrease"]');
+        const increaseBtn = card.querySelector('[data-action="increase"]');
+        const addToCarLoader = card.querySelector('.loading');
         let timer;
 
         if (!cartBtn || !qtyBlock || !qtyNumEl || !decreaseBtn || !increaseBtn) return;
 
-        // Show quantity block when clicking the Add to Cart button
         cartBtn.addEventListener('click', () => {
             cartBtn.classList.add('active');
             qtyBlock.classList.add('active');
             startAddToCartTimer();
         });
 
-        // Handle + / - quantity buttons
         [decreaseBtn, increaseBtn].forEach(btn => {
             btn.addEventListener('click', () => {
                 let qty = parseInt(qtyNumEl.textContent) || 1;
-
                 if (btn.dataset.action === 'increase') qty++;
                 if (btn.dataset.action === 'decrease' && qty > 1) qty--;
-
                 qtyNumEl.textContent = qty;
                 restartAddToCartTimer();
             });
         });
 
-        // Start the 3-second timer to add the item to the cart
         function startAddToCartTimer() {
             clearTimeout(timer);
             timer = setTimeout(addToCart, 3000);
         }
 
-        // Reset the timer on each quantity change
         function restartAddToCartTimer() {
             clearTimeout(timer);
             startAddToCartTimer();
         }
 
-        // Add the item to the Shopify cart via AJAX and open the side cart
         function addToCart() {
             addToCarLoader.classList.add('active');
             qtyBlock.classList.add('adding-to-cart');
@@ -818,44 +811,45 @@
                 return;
             }
 
-            console.log(`🛒 Adding to cart: ID ${id}, Quantity: ${quantity}`);
-
             fetch('/cart/add.js', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({id, quantity})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, quantity })
             })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    return res.json();
-                })
+                .then(res => res.json())
                 .then(() => {
                     fetch(window.Shopify.routes.root + '?sections=cart-drawer')
                         .then(res => res.json())
                         .then(data => {
                             const cartDrawer = document.querySelector('cart-drawer');
-                            const drawerHTML = data['cart-drawer'];
                             const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = drawerHTML;
+                            tempDiv.innerHTML = data['cart-drawer'];
                             const newDrawer = tempDiv.querySelector('cart-drawer');
 
                             if (cartDrawer && newDrawer) {
                                 cartDrawer.innerHTML = newDrawer.innerHTML;
 
-                                // Fire Shopify event to re-initialize the drawer scripts
-                                document.dispatchEvent(new CustomEvent('cart:refresh'));
+                                // Trigger Shopify events
+                                document.dispatchEvent(new Event('shopify:section:load'));
+                                document.dispatchEvent(new Event('cart:refresh'));
 
-                                // Open the drawer
                                 if (typeof cartDrawer.open === 'function') {
-                                    cartBtn.classList.remove('active');
-                                    addToCarLoader.classList.remove('active');
-                                    qtyBlock.classList.remove('adding-to-cart');
-                                    qtyNumEl.textContent = 1;
+                                    // Remove 'is-empty' class if cart has items
+                                    if (cartDrawer.querySelector('.cart-items')) {
+                                        cartDrawer.classList.remove('is-empty');
+                                    } else {
+                                        cartDrawer.classList.add('is-empty');
+                                    }
                                     cartDrawer.open();
                                 } else {
                                     cartDrawer.classList.add('is-open');
                                     document.body.classList.add('overflow-hidden');
                                 }
+
+                                cartBtn.classList.remove('active');
+                                addToCarLoader.classList.remove('active');
+                                qtyBlock.classList.remove('adding-to-cart');
+                                qtyNumEl.textContent = 1;
                             }
                         });
                 })
@@ -864,6 +858,8 @@
                 });
         }
     });
+
+
 
 
     <!-- Initialize Swiper -->
